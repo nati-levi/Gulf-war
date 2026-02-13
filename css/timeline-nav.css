@@ -1,0 +1,124 @@
+/* ===== Timeline Navigation ===== */
+.timeline-nav {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  padding: 1rem 0.5rem;
+  display: none;
+}
+
+.timeline-nav ul {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+
+/* Connecting line */
+.timeline-nav ul::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 50%;
+  width: 2px;
+  background: var(--sand-dark);
+  transform: translateX(-50%);
+}
+
+.timeline-nav li {
+  position: relative;
+  z-index: 1;
+}
+
+.timeline-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem;
+  transition: all var(--transition-base);
+}
+
+.timeline-nav__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--sand-dark);
+  border: 2px solid var(--cream);
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.timeline-nav__link:hover .timeline-nav__dot,
+.timeline-nav__link.is-active .timeline-nav__dot {
+  background: var(--burnt-orange);
+  transform: scale(1.3);
+}
+
+.timeline-nav__label {
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--brown-medium);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-5px);
+  transition: all var(--transition-base);
+  pointer-events: none;
+}
+
+.timeline-nav__link:hover .timeline-nav__label,
+.timeline-nav__link.is-active .timeline-nav__label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Desktop: show sidebar */
+@media (min-width: 1024px) {
+  .timeline-nav {
+    display: block;
+  }
+}
+
+/* ===== Mobile Bottom Bar ===== */
+.timeline-mobile {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--charcoal);
+  padding: 0.6rem 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.3rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.timeline-mobile__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  flex-shrink: 0;
+  transition: all var(--transition-base);
+  cursor: pointer;
+  padding: 0;
+}
+
+.timeline-mobile__dot.is-active {
+  background: var(--amber);
+  transform: scale(1.4);
+}
+
+@media (min-width: 1024px) {
+  .timeline-mobile {
+    display: none;
+  }
+}
