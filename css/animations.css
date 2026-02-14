@@ -1,0 +1,137 @@
+/* ===== Scroll-triggered reveal animations ===== */
+[data-animate] {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+}
+
+[data-animate="fade-left"] {
+  transform: translateX(-40px);
+}
+
+[data-animate="fade-right"] {
+  transform: translateX(40px);
+}
+
+[data-animate="scale-in"] {
+  transform: scale(0.9);
+  opacity: 0;
+}
+
+[data-animate="fade-up"] {
+  transform: translateY(40px);
+}
+
+[data-animate].is-visible {
+  opacity: 1;
+  transform: translate(0, 0) scale(1);
+}
+
+/* Stagger children */
+[data-animate-stagger] > *:nth-child(1) { transition-delay: 0s; }
+[data-animate-stagger] > *:nth-child(2) { transition-delay: 0.1s; }
+[data-animate-stagger] > *:nth-child(3) { transition-delay: 0.2s; }
+[data-animate-stagger] > *:nth-child(4) { transition-delay: 0.3s; }
+[data-animate-stagger] > *:nth-child(5) { transition-delay: 0.4s; }
+[data-animate-stagger] > *:nth-child(6) { transition-delay: 0.5s; }
+[data-animate-stagger] > *:nth-child(7) { transition-delay: 0.6s; }
+[data-animate-stagger] > *:nth-child(8) { transition-delay: 0.7s; }
+
+/* ===== Stagger children need their own opacity/transform ===== */
+[data-animate-stagger] > * {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+}
+
+[data-animate-stagger] > *.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Bar chart fill: base width:0 is in components.css, JS sets target width */
+
+/* ===== SVG stroke draw animation ===== */
+.svg-draw {
+  stroke-dashoffset: var(--path-length, 1000);
+  stroke-dasharray: var(--path-length, 1000);
+  transition: stroke-dashoffset 2s ease-out;
+}
+
+.svg-draw.is-visible {
+  stroke-dashoffset: 0;
+}
+
+/* ===== Pulse animation for map highlights ===== */
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.map-highlight.is-visible {
+  animation: pulse 2s ease-in-out 3;
+}
+
+/* ===== Hero scroll indicator bounce ===== */
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0) translateX(-50%);
+  }
+  40% {
+    transform: translateY(-12px) translateX(-50%);
+  }
+  60% {
+    transform: translateY(-6px) translateX(-50%);
+  }
+}
+
+.scroll-indicator {
+  animation: bounce 2s infinite;
+}
+
+/* ===== Counter glow on finish ===== */
+@keyframes counter-glow {
+  0% { text-shadow: none; }
+  50% { text-shadow: 0 0 20px rgba(204, 85, 0, 0.4); }
+  100% { text-shadow: none; }
+}
+
+.counter.is-finished {
+  animation: counter-glow 1s ease-out;
+}
+
+/* ===== Oil fire flicker ===== */
+@keyframes flicker {
+  0%, 100% { transform: scaleY(1); opacity: 0.9; }
+  25% { transform: scaleY(1.05); opacity: 1; }
+  50% { transform: scaleY(0.95); opacity: 0.85; }
+  75% { transform: scaleY(1.02); opacity: 0.95; }
+}
+
+.oil-fire.is-visible {
+  animation: flicker 0.8s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [data-animate] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .svg-draw {
+    stroke-dashoffset: 0 !important;
+  }
+
+  .bar-chart__fill {
+    transition: none !important;
+  }
+}

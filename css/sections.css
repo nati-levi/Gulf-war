@@ -1,0 +1,242 @@
+/* ===== Hero Section ===== */
+.section--hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--sand-light);
+  position: relative;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(44, 44, 44, 0.3) 0%,
+      rgba(44, 44, 44, 0.1) 40%,
+      rgba(44, 44, 44, 0.5) 80%,
+      rgba(44, 44, 44, 0.9) 100%
+    ),
+    linear-gradient(
+      35deg,
+      #c2956b 0%,
+      #d4a574 20%,
+      #e8c496 40%,
+      #d4a574 60%,
+      #c2956b 80%,
+      #a07850 100%
+    );
+  background-size: cover;
+}
+
+.hero__content {
+  position: relative;
+  z-index: 2;
+  padding: 2rem;
+}
+
+.hero__title {
+  font-size: clamp(2.5rem, 7vw, 5.5rem);
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.04em;
+}
+
+.hero__subtitle {
+  font-family: var(--font-heading);
+  font-size: clamp(1rem, 2.5vw, 1.6rem);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--sand);
+  margin-bottom: 0.5rem;
+}
+
+.hero__date {
+  font-family: var(--font-heading);
+  font-size: clamp(0.9rem, 2vw, 1.2rem);
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  color: var(--amber);
+}
+
+.hero__divider {
+  width: 80px;
+  height: 2px;
+  background: var(--burnt-orange);
+  margin: 1.5rem auto;
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--sand);
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.scroll-indicator svg {
+  display: block;
+  margin: 0.5rem auto 0;
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: var(--sand);
+  stroke-width: 2;
+}
+
+/* ===== Background Section ===== */
+.section--background .map-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.section--background .map-container svg {
+  width: 100%;
+  max-width: 450px;
+  height: auto;
+}
+
+/* ===== Invasion Section ===== */
+.section--invasion {
+  padding-top: calc(var(--section-padding-y) + 60px);
+}
+
+/* ===== Desert Storm Night Sky ===== */
+.section--storm {
+  background-color: #0a0e17;
+  color: var(--sand-light);
+  position: relative;
+}
+
+.section--storm::before {
+  background: #0a0e17;
+}
+
+.section--storm::after {
+  background: #0a0e17;
+}
+
+/* Tracer dots animation */
+.night-sky {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.night-sky__dot {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: var(--amber);
+  border-radius: 50%;
+  opacity: 0;
+  animation: tracer 3s linear infinite;
+}
+
+@keyframes tracer {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-200px);
+  }
+}
+
+.night-sky__dot:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 2.5s; }
+.night-sky__dot:nth-child(2) { left: 25%; animation-delay: 0.7s; animation-duration: 3.2s; }
+.night-sky__dot:nth-child(3) { left: 40%; animation-delay: 1.4s; animation-duration: 2.8s; }
+.night-sky__dot:nth-child(4) { left: 55%; animation-delay: 0.3s; animation-duration: 3.5s; }
+.night-sky__dot:nth-child(5) { left: 70%; animation-delay: 2.1s; animation-duration: 2.3s; }
+.night-sky__dot:nth-child(6) { left: 85%; animation-delay: 1.0s; animation-duration: 3.0s; }
+.night-sky__dot:nth-child(7) { left: 15%; animation-delay: 1.8s; animation-duration: 2.6s; }
+.night-sky__dot:nth-child(8) { left: 60%; animation-delay: 0.5s; animation-duration: 3.1s; }
+.night-sky__dot:nth-child(9) { left: 80%; animation-delay: 2.5s; animation-duration: 2.4s; }
+.night-sky__dot:nth-child(10) { left: 35%; animation-delay: 1.2s; animation-duration: 2.9s; }
+
+/* ===== Highway of Death -- Somber ===== */
+.section--highway {
+  background-color: #3a3228;
+  color: var(--sand-light);
+}
+
+.section--highway::before {
+  background: #3a3228;
+}
+
+.section--highway::after {
+  background: #3a3228;
+}
+
+.section--highway .quote {
+  border-left-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ===== Oil Fires Section ===== */
+.oil-fires-container {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  flex-wrap: wrap;
+}
+
+.oil-fire-icon {
+  width: 40px;
+  height: 60px;
+}
+
+/* ===== Key Figures Section ===== */
+.section--figures {
+  padding-top: calc(var(--section-padding-y) + 60px);
+}
+
+/* ===== Legacy Section ===== */
+.section--legacy {
+  padding-bottom: calc(var(--section-padding-y) + 2rem);
+}
+
+.stats-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+/* ===== Footer ===== */
+.site-footer {
+  background: var(--charcoal);
+  color: var(--sand-dark);
+  text-align: center;
+  padding: 2rem;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+/* ===== Scroll margin for anchors ===== */
+.section[id] {
+  scroll-margin-top: 20px;
+}
+
+/* Mobile bottom bar compensation */
+@media (max-width: 1023px) {
+  .site-footer {
+    padding-bottom: 4rem;
+  }
+}
