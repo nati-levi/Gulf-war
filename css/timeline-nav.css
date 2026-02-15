@@ -1,7 +1,7 @@
-/* ===== Timeline Navigation ===== */
+/* ===== Timeline Navigation (RTL: sidebar on the right) ===== */
 .timeline-nav {
   position: fixed;
-  left: 0;
+  right: 0;
   top: 50%;
   transform: translateY(-50%);
   z-index: 100;
@@ -40,6 +40,7 @@
   gap: 0.5rem;
   padding: 0.4rem;
   transition: all var(--transition-base);
+  flex-direction: row-reverse;
 }
 
 .timeline-nav__dot {
@@ -61,12 +62,11 @@
 .timeline-nav__label {
   font-family: var(--font-heading);
   font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--brown-medium);
   white-space: nowrap;
   opacity: 0;
-  transform: translateX(-5px);
+  transform: translateX(5px);
   transition: all var(--transition-base);
   pointer-events: none;
 }
