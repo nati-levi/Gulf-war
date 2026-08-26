@@ -85,3 +85,14 @@ login suddenly stops working.
 - **Puppeteer/Chromium errors on Linux**: you may need extra system libs;
   see Puppeteer's
   [troubleshooting docs](https://pptr.dev/troubleshooting).
+- **`npm install` fails with "the executable ... is missing"**: Puppeteer's
+  postinstall step downloads a bundled Chromium build and the download got
+  interrupted (VPN/proxy/firewall), leaving a broken cache. Fix:
+  ```bash
+  rm -rf ~/.cache/puppeteer
+  rm -rf node_modules
+  npm install
+  ```
+  If it still fails, confirm you can reach `https://storage.googleapis.com`
+  and `https://googlechromelabs.github.io` from your network (try a
+  different network/VPN off to confirm it's a connectivity block).
