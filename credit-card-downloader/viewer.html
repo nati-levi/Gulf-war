@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statement Viewer</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6; /* blue */
+    --series-1-wash:  rgba(42,120,214,0.10);
+    --good:           #006300;
+    --critical:       #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page:           #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --series-1-wash:  rgba(57,135,229,0.14);
+      --good:           #0ca30c;
+      --critical:       #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page:           #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --series-1-wash:  rgba(57,135,229,0.14);
+    --good:           #0ca30c;
+    --critical:       #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 64px; }
+
+  .topbar { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0; }
+  .subtitle { color: var(--text-secondary); font-size: 13px; margin: 4px 0 20px; }
+  .theme-toggle {
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
+    border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer;
+  }
+
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px 20px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 13px; font-weight: 600; margin: 0 0 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .03em; }
+  .card .caption { font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+
+  /* Drop zone / empty state */
+  .dropzone {
+    border: 1.5px dashed var(--baseline); border-radius: 10px; padding: 48px 24px;
+    text-align: center; color: var(--text-secondary); cursor: pointer;
+    background: var(--surface-1);
+  }
+  .dropzone.drag { border-color: var(--series-1); background: var(--series-1-wash); }
+  .dropzone strong { color: var(--text-primary); }
+  .dropzone input { display: none; }
+  .privacy-note {
+    font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 12px;
+  }
+
+  /* Stat tiles */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .stat .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .stat .value { font-size: 22px; font-weight: 600; }
+  .stat .value.neg { color: var(--critical); }
+  .stat .value.pos { color: var(--good); }
+  .stat .sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Filter row */
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .filters input[type="text"], .filters input[type="date"], .filters select {
+    background: var(--surface-1); border: 1px solid var(--border); color: var(--text-primary);
+    border-radius: 6px; padding: 7px 10px; font-size: 13px; font-family: inherit;
+  }
+  .filters label { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+  .filters .reset { border: none; background: none; color: var(--series-1); font-size: 12px; cursor: pointer; padding: 0; }
+
+  /* Chart */
+  svg.chart { display: block; width: 100%; height: auto; overflow: visible; }
+  .bar { fill: var(--series-1); }
+  .bar.neg { fill: var(--critical); }
+  .bar:hover, .bar:focus { opacity: 0.85; }
+  .axis-label { fill: var(--text-muted); font-size: 11px; }
+  .value-label { fill: var(--text-secondary); font-size: 11px; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .baseline-line { stroke: var(--baseline); stroke-width: 1; }
+
+  .tooltip {
+    position: fixed; pointer-events: none; background: var(--text-primary); color: var(--surface-1);
+    font-size: 12px; padding: 6px 9px; border-radius: 6px; z-index: 50; opacity: 0;
+    transition: opacity 0.08s ease; white-space: nowrap;
+  }
+  .tooltip .tt-value { font-weight: 700; }
+  .tooltip.show { opacity: 1; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-secondary); font-weight: 600; font-size: 12px; cursor: pointer; user-select: none; white-space: nowrap; }
+  th:hover { color: var(--text-primary); }
+  th .sort-arrow { color: var(--text-muted); margin-left: 3px; }
+  td.amount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.amount.neg { color: var(--critical); }
+  tr:hover td { background: var(--series-1-wash); }
+  .table-scroll { max-height: 480px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+  .table-scroll table { min-width: 640px; }
+  .table-scroll thead th { position: sticky; top: 0; background: var(--surface-1); }
+  .empty-row td { text-align: center; color: var(--text-muted); padding: 24px; }
+  .row-count { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+
+  .hidden { display: none !important; }
+  .account-chip {
+    display: inline-block; font-size: 11px; color: var(--text-secondary);
+    border: 1px solid var(--border); border-radius: 999px; padding: 2px 9px; margin: 2px 4px 2px 0;
+  }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <div class="wrap">
+    <div class="topbar">
+      <h1>Statement Viewer</h1>
+      <button class="theme-toggle" id="themeToggle" type="button">Toggle theme</button>
+    </div>
+    <p class="subtitle">Load the JSON files written by the credit-card-downloader CLI's <code>output/</code> folder. Everything below runs in your browser — files are read locally and never uploaded anywhere.</p>
+
+    <div class="card" id="dropCard">
+      <label class="dropzone" id="dropzone" for="fileInput">
+        <div><strong>Click to choose files</strong> or drag &amp; drop them here</div>
+        <div style="margin-top:6px;">Accepts the <code>.json</code> files from <code>output/</code> (one or more accounts)</div>
+        <input id="fileInput" type="file" accept=".json,.csv" multiple>
+      </label>
+      <div class="privacy-note">Nothing leaves this page — parsing happens entirely client-side.</div>
+    </div>
+
+    <div id="app" class="hidden">
+      <div class="stats" id="stats"></div>
+
+      <div class="card">
+        <div class="filters">
+          <input type="text" id="searchInput" placeholder="Search description…" style="min-width:200px;">
+          <label>From <input type="date" id="fromDate"></label>
+          <label>To <input type="date" id="toDate"></label>
+          <select id="accountFilter"></select>
+          <button class="reset" id="resetFilters" type="button">Reset filters</button>
+          <span style="margin-left:auto;"></span>
+          <label style="cursor:pointer;"><input type="file" id="addMoreInput" accept=".json,.csv" multiple style="display:none;"> <span id="addMoreLabel" style="color:var(--series-1); cursor:pointer;">+ Add more files</span></label>
+        </div>
+        <div id="accountChips"></div>
+      </div>
+
+      <div class="card">
+        <h2>Charged amount by month</h2>
+        <div id="monthlyChart"></div>
+        <div class="caption">Sum of each transaction's charged amount, grouped by month. Bars below the line are net refunds/credits for that month.</div>
+      </div>
+
+      <div class="card">
+        <h2>Top merchants by total charged</h2>
+        <div id="merchantChart"></div>
+        <div class="caption">Top 10 descriptions by total absolute charged amount, in the current filter.</div>
+      </div>
+
+      <div class="card">
+        <h2>Transactions</h2>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th data-key="date">Date <span class="sort-arrow"></span></th>
+                <th data-key="description">Description <span class="sort-arrow"></span></th>
+                <th data-key="account">Account <span class="sort-arrow"></span></th>
+                <th data-key="status">Status <span class="sort-arrow"></span></th>
+                <th data-key="chargedAmount" style="text-align:right;">Charged <span class="sort-arrow"></span></th>
+              </tr>
+            </thead>
+            <tbody id="txnBody"></tbody>
+          </table>
+        </div>
+        <div class="row-count" id="rowCount"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var state = {
+    accounts: [],   // [{ key, label, currency, txns: [...] }]
+    txns: [],       // flattened, normalized
+    filtered: [],
+    sortKey: 'date',
+    sortDir: 'desc',
+  };
+
+  var tooltip = document.getElementById('tooltip');
+
+  // ---------- theme toggle ----------
+  var themeToggle = document.getElementById('themeToggle');
+  function applyStoredTheme() {
+    var saved = null;
+    try { saved = localStorage.getItem('viewerTheme'); } catch (e) {}
+    if (saved === 'dark' || saved === 'light') {
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+  }
+  applyStoredTheme();
+  themeToggle.addEventListener('click', function () {
+    var current = document.documentElement.getAttribute('data-theme');
+    var next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('viewerTheme', next); } catch (e) {}
+  });
+
+  // ---------- file parsing ----------
+  function readFileAsText(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(reader.result); };
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+  }
+
+  function parseCsv(text) {
+    var lines = text.split(/\r?\n/).filter(function (l) { return l.length > 0; });
+    if (!lines.length) return [];
+    var headers = splitCsvLine(lines[0]);
+    var rows = [];
+    for (var i = 1; i < lines.length; i++) {
+      var cells = splitCsvLine(lines[i]);
+      var row = {};
+      headers.forEach(function (h, idx) { row[h] = cells[idx] !== undefined ? cells[idx] : ''; });
+      row.originalAmount = parseFloat(row.originalAmount);
+      row.chargedAmount = parseFloat(row.chargedAmount);
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  function splitCsvLine(line) {
+    var out = [];
+    var cur = '';
+    var inQuotes = false;
+    for (var i = 0; i < line.length; i++) {
+      var c = line[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (line[i + 1] === '"') { cur += '"'; i++; }
+          else { inQuotes = false; }
+        } else { cur += c; }
+      } else if (c === '"') {
+        inQuotes = true;
+      } else if (c === ',') {
+        out.push(cur); cur = '';
+      } else {
+        cur += c;
+      }
+    }
+    out.push(cur);
+    return out;
+  }
+
+  function accountLabelFromFilename(name) {
+    return name.replace(/\.(json|csv)$/i, '');
+  }
+
+  function ingestFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList);
+    var jsonFiles = files.filter(function (f) { return /\.json$/i.test(f.name); });
+    var csvFiles = files.filter(function (f) { return /\.csv$/i.test(f.name); });
+    var others = files.length - jsonFiles.length - csvFiles.length;
+
+    var promises = [];
+
+    jsonFiles.forEach(function (file) {
+      promises.push(readFileAsText(file).then(function (text) {
+        var data;
+        try { data = JSON.parse(text); } catch (e) {
+          return { error: 'Could not parse ' + file.name + ' as JSON.' };
+        }
+        var txns = Array.isArray(data.txns) ? data.txns : [];
+        return {
+          account: {
+            key: (data.accountNumber || accountLabelFromFilename(file.name)) + ':' + file.name,
+            label: (data.accountNumber ? ('Account ' + data.accountNumber) : accountLabelFromFilename(file.name)),
+            currency: data.currency || null,
+            sourceFile: file.name,
+            txns: txns,
+          }
+        };
+      }));
+    });
+
+    csvFiles.forEach(function (file) {
+      promises.push(readFileAsText(file).then(function (text) {
+        var rows = parseCsv(text);
+        return {
+          account: {
+            key: accountLabelFromFilename(file.name) + ':' + file.name,
+            label: accountLabelFromFilename(file.name),
+            currency: null,
+            sourceFile: file.name,
+            txns: rows,
+          }
+        };
+      }));
+    });
+
+    return Promise.all(promises).then(function (results) {
+      var errors = [];
+      results.forEach(function (r) {
+        if (r && r.error) { errors.push(r.error); return; }
+        if (r && r.account) { state.accounts.push(r.account); }
+      });
+      if (others > 0) errors.push(others + ' file(s) skipped (only .json and .csv are supported).');
+      if (errors.length) alert(errors.join('\n'));
+      rebuildTransactions();
+      render();
+    });
+  }
+
+  function rebuildTransactions() {
+    var flat = [];
+    state.accounts.forEach(function (acc) {
+      acc.txns.forEach(function (t) {
+        var charged = typeof t.chargedAmount === 'number' ? t.chargedAmount : parseFloat(t.chargedAmount);
+        if (isNaN(charged)) charged = 0;
+        var original = typeof t.originalAmount === 'number' ? t.originalAmount : parseFloat(t.originalAmount);
+        flat.push({
+          date: t.date ? String(t.date).slice(0, 10) : '',
+          description: t.description || '(no description)',
+          memo: t.memo || '',
+          status: t.status || '',
+          type: t.type || '',
+          category: t.category || '',
+          chargedAmount: charged,
+          chargedCurrency: t.chargedCurrency || acc.currency || 'ILS',
+          originalAmount: isNaN(original) ? charged : original,
+          originalCurrency: t.originalCurrency || acc.currency || 'ILS',
+          account: acc.label,
+          accountKey: acc.key,
+        });
+      });
+    });
+    state.txns = flat;
+  }
+
+  // ---------- formatting ----------
+  function formatMoney(amount, currency) {
+    var cur = currency || 'ILS';
+    try {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol' }).format(amount);
+    } catch (e) {
+      return amount.toFixed(2) + ' ' + cur;
+    }
+  }
+  function formatCompact(amount, currency) {
+    var sign = amount < 0 ? '-' : '';
+    var abs = Math.abs(amount);
+    var out;
+    if (abs >= 1000000) out = (abs / 1000000).toFixed(1) + 'M';
+    else if (abs >= 1000) out = (abs / 1000).toFixed(1) + 'K';
+    else out = abs.toFixed(0);
+    var symbol = currency === 'ILS' ? '₪' : (currency === 'USD' ? '$' : (currency === 'EUR' ? '€' : (currency || '') + ' '));
+    return sign + symbol + out;
+  }
+
+  // ---------- filters ----------
+  function currentFilters() {
+    return {
+      search: document.getElementById('searchInput').value.trim().toLowerCase(),
+      from: document.getElementById('fromDate').value,
+      to: document.getElementById('toDate').value,
+      account: document.getElementById('accountFilter').value,
+    };
+  }
+
+  function applyFilters() {
+    var f = currentFilters();
+    state.filtered = state.txns.filter(function (t) {
+      if (f.search && t.description.toLowerCase().indexOf(f.search) === -1) return false;
+      if (f.from && t.date && t.date < f.from) return false;
+      if (f.to && t.date && t.date > f.to) return false;
+      if (f.account && f.account !== 'all' && t.accountKey !== f.account) return false;
+      return true;
+    });
+    sortFiltered();
+  }
+
+  function sortFiltered() {
+    var key = state.sortKey, dir = state.sortDir === 'asc' ? 1 : -1;
+    state.filtered.sort(function (a, b) {
+      var av = a[key], bv = b[key];
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      av = String(av || ''); bv = String(bv || '');
+      return av < bv ? -1 * dir : av > bv ? 1 * dir : 0;
+    });
+  }
+
+  // ---------- stat tiles ----------
+  function renderStats() {
+    var el = document.getElementById('stats');
+    el.innerHTML = '';
+
+    var byCurrency = {};
+    state.filtered.forEach(function (t) {
+      var c = t.chargedCurrency || 'ILS';
+      byCurrency[c] = (byCurrency[c] || 0) + t.chargedAmount;
+    });
+    var currencies = Object.keys(byCurrency);
+    var primary = currencies.sort(function (a, b) { return Math.abs(byCurrency[b]) - Math.abs(byCurrency[a]); })[0];
+
+    var dates = state.filtered.map(function (t) { return t.date; }).filter(Boolean).sort();
+    var range = dates.length ? (dates[0] + ' → ' + dates[dates.length - 1]) : '—';
+
+    var tiles = [];
+    tiles.push({ label: 'Transactions', value: String(state.filtered.length), sub: state.accounts.length + ' account file(s) loaded' });
+
+    if (primary) {
+      var total = byCurrency[primary];
+      var cls = total > 0 ? 'pos' : (total < 0 ? 'neg' : '');
+      var extra = currencies.length > 1 ? (currencies.length - 1) + ' more currenc' + (currencies.length - 1 === 1 ? 'y' : 'ies') : '';
+      tiles.push({ label: 'Net charged (' + primary + ')', value: formatMoney(total, primary), sub: extra, cls: cls });
+    } else {
+      tiles.push({ label: 'Net charged', value: '—' });
+    }
+
+    tiles.push({ label: 'Date range', value: range || '—' });
+
+    var avg = state.filtered.length ? (byCurrency[primary] || 0) / state.filtered.length : 0;
+    tiles.push({ label: 'Avg. per transaction', value: primary ? formatMoney(avg, primary) : '—' });
+
+    tiles.forEach(function (tile) {
+      var div = document.createElement('div');
+      div.className = 'stat';
+      var labelDiv = document.createElement('div');
+      labelDiv.className = 'label';
+      labelDiv.textContent = tile.label;
+      var valueDiv = document.createElement('div');
+      valueDiv.className = 'value' + (tile.cls ? ' ' + tile.cls : '');
+      valueDiv.textContent = tile.value;
+      div.appendChild(labelDiv);
+      div.appendChild(valueDiv);
+      if (tile.sub) {
+        var subDiv = document.createElement('div');
+        subDiv.className = 'sub';
+        subDiv.textContent = tile.sub;
+        div.appendChild(subDiv);
+      }
+      el.appendChild(div);
+    });
+  }
+
+  // ---------- account chips + filter select ----------
+  function renderAccountControls() {
+    var select = document.getElementById('accountFilter');
+    var prev = select.value;
+    select.innerHTML = '';
+    var optAll = document.createElement('option');
+    optAll.value = 'all'; optAll.textContent = 'All accounts';
+    select.appendChild(optAll);
+    state.accounts.forEach(function (acc) {
+      var opt = document.createElement('option');
+      opt.value = acc.key; opt.textContent = acc.label;
+      select.appendChild(opt);
+    });
+    if (prev) select.value = prev;
+
+    var chips = document.getElementById('accountChips');
+    chips.innerHTML = '';
+    state.accounts.forEach(function (acc) {
+      var chip = document.createElement('span');
+      chip.className = 'account-chip';
+      chip.textContent = acc.label + ' · ' + acc.txns.length + ' txns';
+      chips.appendChild(chip);
+    });
+  }
+
+  // ---------- tooltip helper ----------
+  function showTooltip(evt, html) {
+    tooltip.innerHTML = html;
+    tooltip.classList.add('show');
+    positionTooltip(evt);
+  }
+  function positionTooltip(evt) {
+    var x = evt.clientX, y = evt.clientY;
+    var pad = 14;
+    tooltip.style.left = Math.min(x + pad, window.innerWidth - 220) + 'px';
+    tooltip.style.top = Math.max(y - 10, 8) + 'px';
+  }
+  function hideTooltip() { tooltip.classList.remove('show'); }
+
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
+  // ---------- monthly chart (zero-baseline, signed) ----------
+  function renderMonthlyChart() {
+    var container = document.getElementById('monthlyChart');
+    container.innerHTML = '';
+
+    var byMonth = {};
+    state.filtered.forEach(function (t) {
+      if (!t.date) return;
+      var month = t.date.slice(0, 7);
+      byMonth[month] = (byMonth[month] || 0) + t.chargedAmount;
+    });
+    var months = Object.keys(byMonth).sort();
+    if (!months.length) {
+      container.innerHTML = '<div class="caption">No transactions in the current filter.</div>';
+      return;
+    }
+    var currency = mostCommonCurrency();
+
+    var width = container.clientWidth || 600;
+    var height = 220;
+    var padLeft = 46, padRight = 12, padTop = 12, padBottom = 28;
+    var plotW = width - padLeft - padRight;
+    var plotH = height - padTop - padBottom;
+
+    var maxAbs = Math.max.apply(null, months.map(function (m) { return Math.abs(byMonth[m]); }).concat([1]));
+    var zeroY = padTop + plotH / 2;
+    var scale = (plotH / 2) / maxAbs;
+
+    var svg = svgEl('svg', { class: 'chart', viewBox: '0 0 ' + width + ' ' + height, role: 'img', 'aria-label': 'Charged amount by month' });
+
+    // gridlines
+    [0, 0.5, 1].forEach(function (frac) {
+      var y = padTop + plotH * frac;
+      svg.appendChild(svgEl('line', { x1: padLeft, x2: width - padRight, y1: y, y2: y, class: frac === 0.5 ? 'baseline-line' : 'gridline' }));
+    });
+    // y labels
+    [maxAbs, 0, -maxAbs].forEach(function (v, i) {
+      var y = padTop + (plotH / 2) * i;
+      var t = svgEl('text', { x: padLeft - 8, y: y + 4, 'text-anchor': 'end', class: 'axis-label' });
+      t.textContent = formatCompact(v, currency);
+      svg.appendChild(t);
+    });
+
+    var bandW = plotW / months.length;
+    var barW = Math.min(28, bandW * 0.6);
+
+    months.forEach(function (m, i) {
+      var v = byMonth[m];
+      var cx = padLeft + bandW * i + bandW / 2;
+      var barH = Math.abs(v) * scale;
+      var y = v >= 0 ? zeroY - barH : zeroY;
+      var rect = svgEl('rect', {
+        x: cx - barW / 2, y: y, width: barW, height: Math.max(barH, 1),
+        rx: 4, class: 'bar' + (v < 0 ? ' neg' : ''), tabindex: '0',
+        'data-month': m, 'data-value': v,
+      });
+      rect.addEventListener('pointermove', function (evt) {
+        showTooltip(evt, monthTooltip(m, v, currency));
+      });
+      rect.addEventListener('pointerleave', hideTooltip);
+      rect.addEventListener('focus', function (evt) { showTooltip(evt, monthTooltip(m, v, currency)); });
+      rect.addEventListener('blur', hideTooltip);
+      svg.appendChild(rect);
+
+      if (i % Math.ceil(months.length / 12 || 1) === 0 || months.length <= 12) {
+        var lbl = svgEl('text', { x: cx, y: height - 8, 'text-anchor': 'middle', class: 'axis-label' });
+        lbl.textContent = m;
+        svg.appendChild(lbl);
+      }
+    });
+
+    container.appendChild(svg);
+  }
+  function monthTooltip(month, value, currency) {
+    return month + '<br><span class="tt-value">' + escapeHtml(formatMoney(value, currency)) + '</span>';
+  }
+
+  // ---------- merchant chart (horizontal, ranked) ----------
+  function renderMerchantChart() {
+    var container = document.getElementById('merchantChart');
+    container.innerHTML = '';
+
+    var byMerchant = {};
+    state.filtered.forEach(function (t) {
+      var key = t.description || '(no description)';
+      byMerchant[key] = (byMerchant[key] || 0) + Math.abs(t.chargedAmount);
+    });
+    var entries = Object.keys(byMerchant).map(function (k) { return { label: k, value: byMerchant[k] }; });
+    entries.sort(function (a, b) { return b.value - a.value; });
+    entries = entries.slice(0, 10);
+
+    if (!entries.length) {
+      container.innerHTML = '<div class="caption">No transactions in the current filter.</div>';
+      return;
+    }
+    var currency = mostCommonCurrency();
+
+    var width = container.clientWidth || 600;
+    var rowH = 28;
+    var padLeft = 8, padRight = 90, labelW = 160;
+    var height = entries.length * rowH + 12;
+    var plotW = width - padLeft - padRight - labelW;
+
+    var maxV = Math.max.apply(null, entries.map(function (e) { return e.value; }).concat([1]));
+
+    var svg = svgEl('svg', { class: 'chart', viewBox: '0 0 ' + width + ' ' + height, role: 'img', 'aria-label': 'Top merchants by total charged' });
+
+    entries.forEach(function (e, i) {
+      var y = i * rowH + 6;
+      var barW = Math.max((e.value / maxV) * plotW, 2);
+
+      var label = svgEl('text', { x: padLeft, y: y + rowH / 2 - 6 + 4, class: 'value-label' });
+      label.textContent = truncate(e.label, 26);
+      svg.appendChild(label);
+
+      var rect = svgEl('rect', {
+        x: padLeft + labelW, y: y, width: barW, height: rowH - 10, rx: 4, class: 'bar', tabindex: '0',
+      });
+      rect.addEventListener('pointermove', function (evt) { showTooltip(evt, merchantTooltip(e.label, e.value, currency)); });
+      rect.addEventListener('pointerleave', hideTooltip);
+      rect.addEventListener('focus', function (evt) { showTooltip(evt, merchantTooltip(e.label, e.value, currency)); });
+      rect.addEventListener('blur', hideTooltip);
+      svg.appendChild(rect);
+
+      var valueLbl = svgEl('text', { x: padLeft + labelW + barW + 6, y: y + rowH / 2 - 6 + 4, class: 'axis-label' });
+      valueLbl.textContent = formatCompact(e.value, currency);
+      svg.appendChild(valueLbl);
+    });
+
+    container.appendChild(svg);
+  }
+  function merchantTooltip(label, value, currency) {
+    return escapeHtml(truncate(label, 40)) + '<br><span class="tt-value">' + escapeHtml(formatMoney(value, currency)) + '</span>';
+  }
+
+  function mostCommonCurrency() {
+    var counts = {};
+    state.filtered.forEach(function (t) { counts[t.chargedCurrency] = (counts[t.chargedCurrency] || 0) + 1; });
+    var keys = Object.keys(counts);
+    if (!keys.length) return 'ILS';
+    return keys.sort(function (a, b) { return counts[b] - counts[a]; })[0];
+  }
+
+  function truncate(s, n) { return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+  function escapeHtml(s) {
+    var div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // ---------- table ----------
+  function renderTable() {
+    var body = document.getElementById('txnBody');
+    body.innerHTML = '';
+    var rows = state.filtered.slice(0, 500);
+
+    if (!rows.length) {
+      var tr = document.createElement('tr');
+      tr.className = 'empty-row';
+      var td = document.createElement('td');
+      td.colSpan = 5;
+      td.textContent = 'No transactions match the current filters.';
+      tr.appendChild(td);
+      body.appendChild(tr);
+    } else {
+      rows.forEach(function (t) {
+        var tr = document.createElement('tr');
+        appendCell(tr, t.date);
+        appendCell(tr, t.description);
+        appendCell(tr, t.account);
+        appendCell(tr, t.status);
+        var amt = document.createElement('td');
+        amt.className = 'amount' + (t.chargedAmount < 0 ? ' neg' : '');
+        amt.textContent = formatMoney(t.chargedAmount, t.chargedCurrency);
+        tr.appendChild(amt);
+        body.appendChild(tr);
+      });
+    }
+
+    var countEl = document.getElementById('rowCount');
+    countEl.textContent = state.filtered.length > 500
+      ? ('Showing first 500 of ' + state.filtered.length + ' transactions — narrow the filters to see more.')
+      : (state.filtered.length + ' transaction(s)');
+
+    document.querySelectorAll('th[data-key]').forEach(function (th) {
+      var arrow = th.querySelector('.sort-arrow');
+      arrow.textContent = th.getAttribute('data-key') === state.sortKey ? (state.sortDir === 'asc' ? '↑' : '↓') : '';
+    });
+  }
+  function appendCell(tr, text) {
+    var td = document.createElement('td');
+    td.textContent = text;
+    tr.appendChild(td);
+  }
+
+  // ---------- render orchestration ----------
+  function render() {
+    if (!state.txns.length) return;
+    document.getElementById('dropCard').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    renderAccountControls();
+    applyFilters();
+    renderStats();
+    renderMonthlyChart();
+    renderMerchantChart();
+    renderTable();
+  }
+
+  // ---------- wiring ----------
+  var dropzone = document.getElementById('dropzone');
+  var fileInput = document.getElementById('fileInput');
+  fileInput.addEventListener('change', function () { ingestFiles(fileInput.files); fileInput.value = ''; });
+  ['dragenter', 'dragover'].forEach(function (evt) {
+    dropzone.addEventListener(evt, function (e) { e.preventDefault(); dropzone.classList.add('drag'); });
+  });
+  ['dragleave', 'drop'].forEach(function (evt) {
+    dropzone.addEventListener(evt, function (e) { e.preventDefault(); dropzone.classList.remove('drag'); });
+  });
+  dropzone.addEventListener('drop', function (e) {
+    if (e.dataTransfer && e.dataTransfer.files.length) ingestFiles(e.dataTransfer.files);
+  });
+
+  var addMoreInput = document.getElementById('addMoreInput');
+  document.getElementById('addMoreLabel').addEventListener('click', function () { addMoreInput.click(); });
+  addMoreInput.addEventListener('change', function () { ingestFiles(addMoreInput.files); addMoreInput.value = ''; });
+
+  ['searchInput', 'fromDate', 'toDate', 'accountFilter'].forEach(function (id) {
+    document.getElementById(id).addEventListener('input', function () { applyFilters(); renderStats(); renderMonthlyChart(); renderMerchantChart(); renderTable(); });
+  });
+  document.getElementById('resetFilters').addEventListener('click', function () {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('fromDate').value = '';
+    document.getElementById('toDate').value = '';
+    document.getElementById('accountFilter').value = 'all';
+    applyFilters(); renderStats(); renderMonthlyChart(); renderMerchantChart(); renderTable();
+  });
+
+  document.querySelectorAll('th[data-key]').forEach(function (th) {
+    th.addEventListener('click', function () {
+      var key = th.getAttribute('data-key');
+      if (state.sortKey === key) { state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc'; }
+      else { state.sortKey = key; state.sortDir = key === 'date' ? 'desc' : 'asc'; }
+      sortFiltered();
+      renderTable();
+    });
+  });
+
+  window.addEventListener('resize', function () {
+    if (state.txns.length) { renderMonthlyChart(); renderMerchantChart(); }
+  });
+})();
+</script>
+</body>
+</html>

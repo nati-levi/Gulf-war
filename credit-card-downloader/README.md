@@ -40,6 +40,14 @@ pause and ask you to type it into the terminal.
 Results are written to `output/<company>-<account>-<timestamp>.{json,csv}`.
 That folder is git-ignored — statements never get committed.
 
+## Viewing your statements
+
+Open `viewer.html` directly in a browser (double-click it, or `open viewer.html`
+on macOS) and drag the `.json` file(s) from `output/` onto it. It shows spend
+by month, your top merchants, and a searchable/sortable transaction table.
+It's a static page with no server and no network calls — your data is read
+straight from disk into the page and never leaves your browser.
+
 ## Supported companies and required credentials
 
 | `COMPANY_ID` value | Required `.env` fields |
