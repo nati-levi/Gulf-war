@@ -1,0 +1,17 @@
+{
+  "name": "credit-card-downloader",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Download your Israeli credit card / bank statements locally using israeli-bank-scrapers.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.22.2"
+  },
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "israeli-bank-scrapers": "^6.9.0"
+  }
+}
